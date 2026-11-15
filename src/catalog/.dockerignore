@@ -1,0 +1,9 @@
+scripts/
+test/
+.gitignore
+ATTRIBUTION.md
+openapi.yml
+project.json
+README.md
+.dockerignore
+Dockerfile
