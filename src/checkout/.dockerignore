@@ -1,0 +1,13 @@
+scripts/
+test/
+.env
+.gitignore
+.prettierrc
+ATTRIBUTION.md
+eslint.config.mjs
+nest-cli.json
+openapi.yml
+project.json
+README.md
+Dockerfile
+.dockerignore
