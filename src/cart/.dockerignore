@@ -1,0 +1,8 @@
+scripts/
+target/
+.dockerignore
+.gitignore
+ATTRIBUTION.md
+openapi.yml
+project.json
+README.md
