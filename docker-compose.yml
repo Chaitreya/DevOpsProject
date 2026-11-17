@@ -1,0 +1,48 @@
+services:
+  carts:
+    image: cart:v1
+    networks:
+      - retail_net
+  
+
+  catalog:
+    image: catalog:v1
+    networks:
+      - retail_net
+
+  ui:
+    image: ui:v1
+    environment: 
+      RETAIL_UI_ENDPOINTS_CATALOG: http://catalog:8080
+      RETAIL_UI_ENDPOINTS_CARTS: http://carts:8080
+      RETAIL_UI_ENDPOINTS_ORDERS: http://orders:8080
+      RETAIL_UI_ENDPOINTS_CHECKOUT: http://checkout:8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      - carts
+      - catalog
+      - orders
+      - checkout
+    networks:
+      - retail_net
+
+
+  orders:
+    image: orders:v1
+    networks:
+      - retail_net
+  
+  checkout:
+    image: checkout:v1
+    environment:
+      RETAIL_CHECKOUT_ENDPOINTS_ORDERS: http://orders:8080
+    depends_on:
+      - orders
+    networks:
+      - retail_net
+
+networks:
+  retail_net:
+    driver: bridge
+      
