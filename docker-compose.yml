@@ -15,6 +15,7 @@ services:
       - catalog
     networks:
       - retail_net
+    restart: unless-stopped
 
   carts:
     image: cart:v1
@@ -26,15 +27,26 @@ services:
       AWS_SECRET_ACCESS_KEY: "dummy"
       AWS_REGION: "us-east-1"
     depends_on:
-      - carts-db
+      carts-db:
+        condition: service_healthy
+
     networks:
       - retail_net
+    restart: unless-stopped
 
 
   carts-db:
     image: amazon/dynamodb-local
+    user: root
+    command: "-jar DynamoDBLocal.jar -sharedDb -dbPath /home/dynamodblocal/data"
+    volumes:
+      - carts_data:/home/dynamodblocal/data
     networks:
       - retail_net
+    healthcheck:
+      test: ["CMD-SHELL", "exit 0"]
+      interval: 5s
+      start_period: 5s
 
   orders:
     image: orders:v1
@@ -57,6 +69,7 @@ services:
 
     networks:
       - retail_net
+    restart: unless-stopped
   
   orders-db:
     image: postgres:18-alpine
@@ -69,7 +82,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
-
+    volumes:
+      - orders_data:/var/lib/postgresql
     networks:
       - retail_net
 
@@ -98,9 +112,9 @@ services:
     depends_on:
       catalog-db:
         condition: service_healthy
-
     networks:
       - retail_net
+    restart: unless-stopped
 
   catalog-db:
     image: mysql:8.4
@@ -110,10 +124,12 @@ services:
       MYSQL_PASSWORD: "catalog_pass"
       MYSQL_ROOT_PASSWORD: "root_pass"
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD"]
       interval: 5s
       timeout: 5s
       retries: 10
+    volumes:
+      - catalog_data:/var/lib/mysql
     networks:
       - retail_net
 
@@ -130,6 +146,7 @@ services:
 
     networks:
       - retail_net
+    restart: unless-stopped
 
   checkout-redis:
     image: redis:8-alpine
@@ -140,6 +157,10 @@ networks:
   retail_net:
     driver: bridge
 
+volumes:
+  catalog_data:
+  orders_data:
+  carts_data:
 
 
 
