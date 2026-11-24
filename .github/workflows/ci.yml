@@ -7,7 +7,10 @@ permissions:
   packages: write
 
 jobs:
-  build-and-push-ui:
+  build-and-push:
+    strategy:
+      matrix:
+        service: [ui, cart, catalog, checkout, orders]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository code
@@ -23,6 +26,6 @@ jobs:
       - name: Build and Push
         uses: docker/build-push-action@v7
         with:
-          context: "./src/ui"
+          context: "./src/${{ matrix.service }}"
           push: true
-          tags: ghcr.io/chaitreya/ui:${{ github.sha }}
+          tags: ghcr.io/chaitreya/${{ matrix.service }}:${{ github.sha }}
