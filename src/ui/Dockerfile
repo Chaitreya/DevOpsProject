@@ -13,3 +13,4 @@ WORKDIR /app
 COPY --from=builder --chown=nonroot:nonroot /app/target/*.jar ./app.jar
 EXPOSE 8080
 CMD ["/app/app.jar" ]
+# Test change for pipeline fitler

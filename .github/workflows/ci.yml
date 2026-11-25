@@ -7,10 +7,38 @@ permissions:
   packages: write
 
 jobs:
+
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      changes: ${{ steps.filter.outputs.changes }}
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+
+      - name: Grabbing changes
+        uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: | 
+            ui:  
+              - 'src/ui/**'
+            cart:
+              - 'src/cart/**'
+            catalog:
+              - 'src/catalog/**'
+            orders:
+              - 'src/orders/**'
+            checkout:
+              - 'src/checkout/**'
+
   build-and-push:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.changes != '[]' && needs.detect-changes.outputs.changes != ''}}
     strategy:
       matrix:
-        service: [ui, cart, catalog, checkout, orders]
+        # service: [ui, cart, catalog, checkout, orders]
+        component: ${{ fromJson(needs.detect-changes.outputs.changes )}}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository code
@@ -26,6 +54,6 @@ jobs:
       - name: Build and Push
         uses: docker/build-push-action@v7
         with:
-          context: "./src/${{ matrix.service }}"
+          context: "./src/${{ matrix.component }}"
           push: true
-          tags: ghcr.io/chaitreya/${{ matrix.service }}:${{ github.sha }}
+          tags: ghcr.io/chaitreya/${{ matrix.component }}:${{ github.sha }}
