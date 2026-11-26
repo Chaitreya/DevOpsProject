@@ -1,0 +1,70 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: orders-db
+  namespace: retail-store
+spec:
+  selector:
+    db: orders-db
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+
+---
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: orders-db
+  namespace: retail-store
+spec: 
+  selector:
+    matchLabels:
+      db: orders-db
+  serviceName: "order-db"
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        db: orders-db
+    spec:
+      containers:
+        - name: orders-db
+          image: postgres:18-alpine
+          ports:
+            - containerPort: 5432
+          readinessProbe:
+            exec:
+              command: ["sh" , "-c", "pg_isready -U postgres -d orders"]
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 3
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: retail-store-config
+                  key: POSTGRES_USER
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: retail-store-config
+                  key: POSTGRES_DB
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: retail-store-secrets
+                  key: POSTGRES_PASSWORD
+          volumeMounts:
+            - name: orders-db-data
+              mountPath: /var/lib/postgresql
+  volumeClaimTemplates:
+    - metadata:
+        name: orders-db-data
+      spec: 
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 1Gi

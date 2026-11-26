@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: orders-messaging
+  namespace: retail-store
+spec:
+  selector:
+    db: orders-messaging
+  ports:
+    - name: amqp
+      protocol: TCP
+      port: 5672
+      targetPort: 5672
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: orders-messaging
+  namespace: retail-store
+spec:
+  selector:
+    matchLabels:
+      db: orders-messaging
+  replicas: 1
+  serviceName: "orders-messaging"
+  template:
+    metadata:
+      labels:
+        db: orders-messaging
+    spec:
+      containers:
+        - name: orders-messaging
+          image: rabbitmq:3.9-alpine
+          ports:
+            - name: amqp
+              containerPort: 5672
+          env:
+            - name: RABBITMQ_LOGS
+              value: "-"
+            - name: RABBITMQ_DEFAULT_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: retail-store-config
+                  key: RABBITMQ_DEFAULT_USER
+            - name: RABBITMQ_DEFAULT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: retail-store-secrets
+                  key: RABBITMQ_DEFAULT_PASS
+          readinessProbe:
+            tcpSocket:
+              port: 5672
+            initialDelaySeconds: 10
+            periodSeconds: 5
